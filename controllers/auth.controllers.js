@@ -31,12 +31,19 @@ export const signUp = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 24 heures
+    });
+
     res.status(201).json({
       success: true,
       message: "User created successfully",
       data: {
-        token,
         user: newUsers[0],
+        token,
       },
     });
   } catch (error) {
@@ -58,7 +65,7 @@ export const signIn = async (req, res, next) => {
       throw error;
     }
 
-    const isPasswordValid = bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       const error = new Error("Invalid password");
@@ -70,12 +77,19 @@ export const signIn = async (req, res, next) => {
       expiresIn: JWT_EXPIRES_IN,
     });
 
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       success: true,
       message: "User signed in successfully",
       data: {
-        token,
         user,
+        token,
       },
     });
   } catch (error) {
